@@ -21,6 +21,7 @@ def create_role_and_user(user: dict):
     
 @router.get("/users")
 def get_users_with_roles_and_permissions():
+    """GET /users, não é necessário parametros"""
     return controller.list_users_with_permissions()
 
 @router.get("/users/{role_id}")

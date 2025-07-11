@@ -1,21 +1,24 @@
 from fastapi import FastAPI
 from sqlalchemy.orm import Session
-from fastapi import FastAPI, Depends, HTTPException
+from fastapi import FastAPI, HTTPException
 from src.services.backend_service import BackendService
 import json
 
 app = FastAPI()
 service = BackendService()
-# Rota para buscar o papel do usuário pelo ID do usuário
+
 class BackendController:
+    
     def register_role_and_user(self, user: any):
+        """Função responsável por registrar um usuário e um papel."""
         try:
             create_role, create_user = service.register_role_maybe_user(user=user, role_id=None)
-            
+            """Cria um usuário, caso não seja possível criar um usuário, cria um papel e retorna que não foi possível criar o usuário.
+            Só é possível criar um usuário após criar um papel."""
             if not create_user:
                 raise HTTPException(status_code=500, detail="Erro ao criar usuário")
             
-            # create_role pode ser None, se você permitir criar só usuário sem criar role novo
+            """Retorna o usuário e o papel criado."""
             return {
                 "status_code": 201,
                 "user": {
@@ -37,16 +40,17 @@ class BackendController:
         
     
     def list_users_with_permissions(self):
+        ##Responsável por realizar um GET com base na query passada
         try:
             result = service.get_users_with_roles_and_claims()
-            # Transforma os resultados ORM em dicionários
             return [
                 {
-                    "nome": r.nome,
+                    "name": r.name,
                     "email": r.email,
-                    "papel": r.papel,
-                    "permissoes": r.permissoes
+                    "role": r.role,
+                    "permissions": r.permissions
                 }
+                #Responsável por iterar sobre o resultado e extrair os dados necessários    -Refatorar para avaliar necessidade-
                 for r in result
             ]
         except Exception as e:
@@ -54,6 +58,7 @@ class BackendController:
         
         
     def get_user_role_by_roleId(self, role_id: int):
+        """Função responsável por buscar um usuário e seu papel pelo ID do papel."""
         user_role = service.get_role_by_role_id(role_id)
         if not user_role:
             raise HTTPException(status_code=404, detail="Usuário ou papel não encontrado")
@@ -64,22 +69,20 @@ class BackendController:
             "role_id": user_role["role_id"],
             "user_roles": user_role["role_description"],
             "created_at": str(user_role["created_at"]),
-            "updated_at": str(user_role["updated_at"]) if user_role["updated_at"] else None,
+            "updated_at": str(user_role["updated_at"]),
         }
-
-    # def get_user_role(id: all):
-    #     id = json.loads()
-    #     user = service.get_user_role_by_id(id.userId)
-    #     return user
     
-    def create_user(user: any):
+    def create_user(user: str):
+        """Função responsável por criar um usuário."""
         try:
             create_user = service.create_user(user)
             return create_user
+        
         except HTTPException as e:
             raise HTTPException(status_code=e.status_code, detail=e.detail)
         
-    def create_role(user: any):
+    def create_role(user: str):
+        """Função responsável por criar um papel."""
         try:
             create_role = service.create_role(user)
             return create_role

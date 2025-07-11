@@ -24,14 +24,14 @@ class BackendService:
                 self.db.refresh(create_role)
             except Exception as e:
                 self.db.rollback()
-                raise HTTPException(status_code=500, detail=str(e))
+                return { "error": str(e) }
 
             try:
                 created_user = self.register_user(user=user, role_id=create_role.id)
                 return create_role, created_user
             except Exception as e:
                 self.db.rollback()
-                raise HTTPException(status_code=500, detail=str(e))
+                return { "error": str(e) }
         
     def register_role(self, user:any):
         try:
@@ -46,7 +46,7 @@ class BackendService:
         
         except Exception as e:
             self.db.rollback()
-            raise HTTPException(status_code=500, detail=str(e))
+            return { "error": str(e) }
         
     def register_user(self, user: any, role_id: int = None):
         if not role_id:
@@ -55,7 +55,7 @@ class BackendService:
             create_user = User(
                 name=user["name"],
                 email=user["email"],
-                password=user["password"] | "default_password",  # Use a default password if not provided
+                password=user["password"] | "default_password",  # se possível, utilizar algum token para senha
                 role_id=role_id,
                 created_at=datetime.now(),
                 updated_at=datetime.now()
@@ -68,77 +68,44 @@ class BackendService:
         
         except Exception as e:
             self.db.rollback()
-            raise HTTPException(status_code=500, detail=str(e))
+            return { "error": str(e) }
         
     def get_users_with_roles_and_claims(self):
-        query = (
-            self.db.query(
-                User.name.label("nome"),
-                User.email.label("email"),
-                Role.description.label("papel"),
-                func.group_concat(Claim.description, ', ').label("permissoes")
+        try:
+            query = (
+                self.db.query(
+                    User.name.label("name"),
+                    User.email.label("email"),
+                    Role.description.label("role"),
+                    func.group_concat(Claim.description, ', ').label("permissions")
+                )
+                .outerjoin(Role, User.role_id == Role.id)
+                .outerjoin(UserClaim, User.id == UserClaim.user_id)
+                .outerjoin(Claim, UserClaim.claim_id == Claim.id)
+                .group_by(User.id)
+                .order_by(User.name)
             )
-            .outerjoin(Role, User.role_id == Role.id)
-            .outerjoin(UserClaim, User.id == UserClaim.user_id)
-            .outerjoin(Claim, UserClaim.claim_id == Claim.id)
-            .group_by(User.id)
-            .order_by(User.name)
-        )
 
-        return query.all()
+            return query.all()
+        except Exception as e:
+            return { "error": str(e) }
     
     def get_role_by_role_id(self, role_id: int):
-        """
-        Consulta um papel (Role) pelo ID e retorna suas informações.
-
-        Args:
-            role_id (int): O ID do papel a ser consultado.
-
-        Returns:
-            Optional[Dict]: Dicionário com informações do papel e usuário,
-                            ou None se não encontrado.
-        """
-        user_consult = self.db.query(User).filter(User.role_id == role_id).first()
-        if user_consult:
-            role_consult = self.db.query(Role).filter(Role.id == user_consult.role_id).first()
-            if role_consult:
-                return {
-                    "user_id": user_consult.id,
-                    "user_name": user_consult.name,
-                    "user_email": user_consult.email,
-                    "role_id": role_consult.id,
-                    "role_description": role_consult.description,
-                    "created_at": user_consult.created_at,
-                    "updated_at": user_consult.updated_at,
-                }
-        # Se não encontrou o usuário ou o papel, retorna None
-        return None
-
-        
-    # Uncomment this method if you want to use it    
-
-    # def get_user_role_by_id(self, user_id: int) -> typing.Optional[typing.Dict]:
-    #     """
-    #     Consulta um usuário pelo ID e retorna suas informações junto com o papel (Role).
-
-    #     Args:
-    #         user_id (int): O ID do usuário a ser consultado.
-
-    #     Returns:
-    #         Optional[Dict]: Um dicionário contendo o ID do usuário, email,
-    #                         ID do papel e descrição do papel, ou None se o usuário não for encontrado.
-    #     """
-    #     # Realiza a consulta ao banco de dados para buscar o usuário pelo ID
-    #     # e carrega a relação 'role' para evitar consultas N+1.
-    #     user = self.db.query(User).filter(User.id == user_id).first()
-
-    #     if not user:
-    #         return None # Retorna None se o usuário não for encontrado
-
-    #     # Retorna os dados formatados conforme o exemplo original
-    #     return {
-    #         "user_id": user.id,
-    #         "user_email": user.email, # Usando email como identificador do usuário
-    #         "role_id": user.role.id,
-    #         "role_description": user.role.description
-    #     }
+        """ Consulta um papel (Role) pelo ID e retorna suas informações."""
+        try:
+            user_consult = self.db.query(User).filter(User.role_id == role_id).first()
+            if user_consult:
+                role_consult = self.db.query(Role).filter(Role.id == user_consult.role_id).first()
+                if role_consult:
+                    return {
+                        "user_id": user_consult.id,
+                        "user_name": user_consult.name,
+                        "user_email": user_consult.email,
+                        "role_id": role_consult.id,
+                        "role_description": role_consult.description,
+                        "created_at": user_consult.created_at,
+                        "updated_at": user_consult.updated_at,
+                    }
+        except Exception as e:
+            return { "error": str(e) }
+            # Se não encontrou o usuário ou o papel, retorna None
