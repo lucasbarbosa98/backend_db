@@ -16,7 +16,6 @@ class Role(Base):
     description = Column(String, nullable=False)
     users = relationship("User", back_populates="role")
  
-"""#Role[id] -> User[role_id] """
 class User(Base):
     __tablename__ = 'users'
     id = Column(Integer, primary_key=True, autoincrement=True)
@@ -44,8 +43,8 @@ class UserClaim(Base):
     claim_id = Column(Integer, ForeignKey('claims.id'), primary_key=True)
     __table_args__ = (UniqueConstraint('user_id', 'claim_id', name='user_claims_un'),)
 
-# ======= CLASSE DATABASE =======
 
+"""CLASSE DATABASE"""
 class Database:
     def __init__(self, database_url=DATABASE_URL):
         self.engine = create_engine(
@@ -55,9 +54,9 @@ class Database:
         )
         self.SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=self.engine)
 
-        # Cria tabelas se ainda não existirem
+        #Cria as tabelas, se chamado
         Base.metadata.create_all(bind=self.engine)
 
+# retorna uma nova sessão do banco de dados
     def get_session(self):
         return self.SessionLocal()
-"""é criado uma base de dados toda vez que o servidor é iniciado"""

@@ -91,27 +91,3 @@ class BackendService:
                 "updated_at": user_consult.updated_at,
             } # Se não encontrou o usuário ou o papel, retorna None
             
-
-
-    # def register_role_maybe_user(self, user: dict, role_id: int = None):
-    #     if role_id:
-    #         # Já tem role_id, cria só usuário
-    #         created_user = self.register_user(user=user, role_id=role_id)
-    #         return None, created_user
-    #     else:
-    #         # Cria role e usuário juntos
-    #         try:
-    #             create_role = Role(description=user["description"])
-    #             self.db.add(create_role)
-    #             self.db.commit()
-    #             self.db.refresh(create_role)
-    #         except Exception as e:
-    #             self.db.rollback()
-    #             return { "error": str(e) }
-
-    #         try:
-    #             created_user = self.register_user(user=user, role_id=create_role.id)
-    #             return create_role, created_user
-    #         except Exception as e:
-    #             self.db.rollback()
-    #             return { "error": str(e) }

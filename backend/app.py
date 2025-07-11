@@ -5,10 +5,10 @@ from sqlalchemy.orm import Session
 from src.dal.database import Database
 from src.routes.backend_routes import router
 
-""" Inicializa o banco de dados e cria uma sessão para interações com o banco """
+""" Instancia o FastAPI, modo debug e versão """
 app = FastAPI(title="Backend Test", debug=True, version="1.0.0")
 
-""" Cria uma instância do banco de dados, é criado um novo banco de dados toda vez que o servidor é iniciado """
+""" Registra as rotas definidas em routes """
 app.include_router(router)
 
 """ Rota base para verificar se o servidor está rodando """
